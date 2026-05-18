@@ -1115,6 +1115,9 @@ def render_result(r):
     verdict_type = r["verdict_type"]
 
     conf_pct = max(final_fake, final_real) * 100
+    
+    # Safe validation for when RoBERTa is inactive/None
+    rob_val = f"{r['roberta_fake']*100:.1f}%" if r["roberta_fake"] is not None else "N/A"
 
     # Verdicts mapping for both languages
     verdicts = {
@@ -1176,7 +1179,7 @@ def render_result(r):
                     🤖 TF-IDF: <span style="font-weight: 700; color: #c4b5fd;">{r['tfidf_fake']*100:.1f}%</span>
                 </div>
                 <div class="metric-chip" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">
-                    🧠 RoBERTa: <span style="font-weight: 700; color: #c4b5fd;">{r['roberta_fake']*100:.1f}%</span>
+                    🧠 RoBERTa: <span style="font-weight: 700; color: #c4b5fd;">{rob_val}</span>
                 </div>
                 <div class="metric-chip te-text" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">
                     📝 పదాల సంఖ్య: <span style="font-weight: 700; color: #c4b5fd;">{features['word_count']}</span>
