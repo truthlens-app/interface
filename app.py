@@ -1034,13 +1034,12 @@ def page_home():
                 if url_input and url_input.startswith("http"):
                     with st.spinner("Fetching article…"):
                         scraped = scrape_article(url_input)
-                    scraped_words = len(scraped["text"].strip().split()) if scraped["success"] else 0
-                    if scraped["success"] and scraped_words >= 100:
+                    if scraped["success"] and len(scraped["text"]) >= 50:
                         full_text = scraped["title"] + " " + scraped["text"]
                         _run_analysis(full_text.strip(), input_type="url",
                                       scraped_meta=scraped)
                     else:
-                        st.error(f"Could not extract enough article text (minimum 100 words). {scraped.get('error','')}")
+                        st.error(f"Could not extract article text. {scraped.get('error','')}")
                 else:
                     st.warning("Please enter a valid URL starting with https://")
 
