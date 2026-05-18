@@ -3,7 +3,6 @@
 # Full Production App — app.py
 # Deploy on: Streamlit Cloud (24/7) via GitHub
 # ============================================================
-
 import os
 import sys
 import re
@@ -16,12 +15,9 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 import requests
-
 # ── Auto-download models from HuggingFace if needed ─────────
 from huggingface_hub import hf_hub_download, snapshot_download
-
 HF_REPO = "Abhichakra/truthlens-models"
-
 @st.cache_resource(show_spinner=False)
 def download_models():
     os.makedirs("/tmp/models", exist_ok=True)
@@ -38,7 +34,6 @@ def download_models():
             ignore_patterns=["*.md"]
         )
     return "/tmp/models"
-
 # ── Page Config ─────────────────────────────────────────────
 st.set_page_config(
     page_title="TruthLens — AI Fake News Detector",
@@ -46,7 +41,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-
 # ── Session State Init ───────────────────────────────────────
 for key, default in {
     "page": "home",
@@ -65,9 +59,7 @@ for key, default in {
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
-
 GUEST_LIMIT = 5   # ← guests get 5 free checks total (resets each browser session, NOT each reload)
-
 # ─────────────────────────────────────────────────────────────
 # LANGUAGE STRINGS  (Telugu · Hindi · Malayalam · English + more)
 # ─────────────────────────────────────────────────────────────
@@ -115,8 +107,6 @@ LANG = {
         "sentiment": "భావోద్వేగం", "subjectivity": "ఆత్మాశ్రయత",
         "word_count": "పదాల సంఖ్య", "clickbait": "క్లిక్‌బెయిట్ పదాలు",
         "about": "గురించి", "how_it_works": "ఇది ఎలా పని చేస్తుంది",
-        "bilingual_header": "తెలుగు + ENGLISH OUTPUT",
-        "bilingual_native_label": "తెలుగు",
     },
     "hi": {
         "flag": "🇮🇳", "name": "हिंदी",
@@ -129,7 +119,7 @@ LANG = {
         "confidence": "विश्वास स्तर", "why": "यह परिणाम क्यों?",
         "how": "इसका विश्लेषण कैसे हुआ?",
         "history": "मेरा इतिहास", "profile": "प्रोफ़ाइल",
-        "logout": "लॉगआउट", "login": "लॉगिन",
+        "logout": "लॉगआऊट", "login": "लॉगिन",
         "signup": "साइन अप", "guest": "अतिथि के रूप में जारी रखें",
         "attempts_left": "मुफ़्त जाँचें बची हैं",
         "upgrade_msg": "असीमित जाँच के लिए साइन अप करें!",
@@ -139,8 +129,6 @@ LANG = {
         "sentiment": "भावना", "subjectivity": "व्यक्तिपरकता",
         "word_count": "शब्द संख्या", "clickbait": "क्लिकबेट शब्द",
         "about": "बारे में", "how_it_works": "यह कैसे काम करता है",
-        "bilingual_header": "हिंदी + ENGLISH OUTPUT",
-        "bilingual_native_label": "हिंदी",
     },
     "ml": {
         "flag": "🇮🇳", "name": "മലയാളം",
@@ -163,8 +151,6 @@ LANG = {
         "sentiment": "വികാരം", "subjectivity": "ആത്മനിഷ്ഠത",
         "word_count": "വാക്കുകളുടെ എണ്ണം", "clickbait": "ക്ലിക്ക്ബെയ്റ്റ് വാക്കുകൾ",
         "about": "കുറിച്ച്", "how_it_works": "ഇത് എങ്ങനെ പ്രവർത്തിക്കുന്നു",
-        "bilingual_header": "മലയാളം + ENGLISH OUTPUT",
-        "bilingual_native_label": "മലയാളം",
     },
     "ta": {
         "flag": "🇮🇳", "name": "தமிழ்",
@@ -187,8 +173,6 @@ LANG = {
         "sentiment": "உணர்வு", "subjectivity": "தனிப்பட்ட கருத்து",
         "word_count": "வார்த்தை எண்ணிக்கை", "clickbait": "கிளிக்பெயிட் வார்த்தைகள்",
         "about": "பற்றி", "how_it_works": "இது எவ்வாறு செயல்படுகிறது",
-        "bilingual_header": "தமிழ் + ENGLISH OUTPUT",
-        "bilingual_native_label": "தமிழ்",
     },
     "kn": {
         "flag": "🇮🇳", "name": "ಕನ್ನಡ",
@@ -213,32 +197,26 @@ LANG = {
         "about": "ಬಗ್ಗೆ", "how_it_works": "ಇದು ಹೇಗೆ ಕಾರ್ಯ ನಿರ್ವಹಿಸುತ್ತದೆ",
     },
 }
-
 def t(key):
     lang = st.session_state.lang
     return LANG.get(lang, LANG["en"]).get(key, LANG["en"].get(key, key))
-
 # ─────────────────────────────────────────────────────────────
 # CSS — Luxury dark UI with glassmorphism
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, .stApp { font-family: 'Sora', sans-serif !important; }
-
 #MainMenu, footer, header { visibility: hidden !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 section[data-testid="stSidebar"] { display: none !important; }
 .block-container { padding: 0 !important; max-width: 100% !important; }
-
 .stApp {
-    background: radial-gradient(ellipse at 20% 10%, #1a0535 0%, #07030f 55%, #030108 100%) !important;
+    background: radial-gradient(ellipse at 20% 10%, #0f0730 0%, #060612 50%, #020208 100%) !important;
     min-height: 100vh;
     color: #e8e6f0 !important;
 }
-
 /* ── NAVBAR ── */
 .tl-nav {
     display: flex;
@@ -256,7 +234,7 @@ section[data-testid="stSidebar"] { display: none !important; }
 .tl-logo {
     font-size: 1.55rem;
     font-weight: 800;
-    background: linear-gradient(90deg, #00e5ff, #a855f7, #f472b6);
+    background: linear-gradient(90deg, #6ee7ff, #a78bfa, #f472b6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -265,7 +243,6 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 .nav-center { display: flex; gap: 0.4rem; align-items: center; }
 .nav-right { display: flex; gap: 0.75rem; align-items: center; }
-
 .nav-pill {
     padding: 0.35rem 0.9rem;
     border-radius: 999px;
@@ -280,7 +257,6 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 .nav-pill:hover { color: #fff; background: rgba(255,255,255,0.07); }
 .nav-pill.active { color: #a78bfa; border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.08); }
-
 .lang-btn {
     padding: 0.3rem 0.75rem;
     border-radius: 999px;
@@ -293,7 +269,6 @@ section[data-testid="stSidebar"] { display: none !important; }
     transition: all 0.2s;
 }
 .lang-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-
 .profile-avatar {
     width: 34px; height: 34px;
     border-radius: 50%;
@@ -304,7 +279,6 @@ section[data-testid="stSidebar"] { display: none !important; }
     transition: all 0.2s;
 }
 .profile-avatar:hover { transform: scale(1.05); border-color: #a78bfa; }
-
 .auth-btn {
     padding: 0.4rem 1rem;
     border-radius: 999px;
@@ -321,12 +295,11 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 .auth-btn.login:hover { background: rgba(167,139,250,0.1); }
 .auth-btn.signup {
-    background: linear-gradient(135deg, #00b4d8, #7c3aed, #ec4899);
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
     color: #fff;
-    box-shadow: 0 0 20px rgba(124,58,237,0.4);
+    box-shadow: 0 0 20px rgba(124,58,237,0.3);
 }
-.auth-btn.signup:hover { box-shadow: 0 0 30px rgba(124,58,237,0.6); transform: translateY(-1px); }
-
+.auth-btn.signup:hover { box-shadow: 0 0 30px rgba(124,58,237,0.5); transform: translateY(-1px); }
 /* Guest counter badge */
 .guest-badge {
     padding: 0.3rem 0.8rem;
@@ -337,7 +310,6 @@ section[data-testid="stSidebar"] { display: none !important; }
     border: 1px solid rgba(251,146,60,0.35);
     color: #fb923c;
 }
-
 /* ── HERO ── */
 .hero {
     text-align: center;
@@ -361,7 +333,7 @@ section[data-testid="stSidebar"] { display: none !important; }
     font-size: clamp(2.5rem, 6vw, 4.5rem);
     font-weight: 800;
     line-height: 1.1;
-    background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 40%, #00e5ff 80%);
+    background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 40%, #6ee7ff 80%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -387,13 +359,12 @@ section[data-testid="stSidebar"] { display: none !important; }
 .stat-num {
     font-size: 1.8rem;
     font-weight: 800;
-    background: linear-gradient(90deg, #00e5ff, #a855f7);
+    background: linear-gradient(90deg, #6ee7ff, #a78bfa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 .stat-label { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin-top: 0.25rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
-
 /* ── ANALYZER CARD ── */
 .analyzer-card {
     max-width: 820px;
@@ -433,7 +404,6 @@ section[data-testid="stSidebar"] { display: none !important; }
     color: #c4b5fd;
     border: 1px solid rgba(167,139,250,0.3);
 }
-
 /* ── RESULT CARD ── */
 .result-card {
     border-radius: 20px;
@@ -469,7 +439,6 @@ section[data-testid="stSidebar"] { display: none !important; }
     color: rgba(255,255,255,0.5);
     margin-bottom: 1.25rem;
 }
-
 /* Confidence meter */
 .conf-bar-wrap {
     height: 6px;
@@ -483,7 +452,6 @@ section[data-testid="stSidebar"] { display: none !important; }
     border-radius: 999px;
     transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
 /* Reasons */
 .reason-item {
     display: flex;
@@ -497,7 +465,6 @@ section[data-testid="stSidebar"] { display: none !important; }
     line-height: 1.5;
     color: rgba(255,255,255,0.8);
 }
-
 /* Why Real / Why Fake explanation */
 .explain-section {
     background: rgba(255,255,255,0.03);
@@ -519,7 +486,6 @@ section[data-testid="stSidebar"] { display: none !important; }
     line-height: 1.65;
     color: rgba(255,255,255,0.7);
 }
-
 /* Metric chips */
 .metrics-row {
     display: flex;
@@ -536,7 +502,6 @@ section[data-testid="stSidebar"] { display: none !important; }
     color: rgba(255,255,255,0.65);
 }
 .metric-chip span { font-weight: 700; color: #c4b5fd; }
-
 /* Copy/Share row */
 .action-row {
     display: flex;
@@ -557,7 +522,6 @@ section[data-testid="stSidebar"] { display: none !important; }
     font-family: 'Sora', sans-serif;
 }
 .action-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-
 /* ── HISTORY CARD ── */
 .hist-item {
     padding: 1rem 1.2rem;
@@ -584,7 +548,6 @@ section[data-testid="stSidebar"] { display: none !important; }
 .hist-real { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
 .hist-sus { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #fbbf24; }
 .hist-date { font-size: 0.73rem; color: rgba(255,255,255,0.3); }
-
 /* ── PROFILE PAGE ── */
 .profile-header {
     background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(110,231,255,0.08));
@@ -622,7 +585,6 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 .profile-stat-num { font-size: 1.4rem; font-weight: 800; color: #a78bfa; }
 .profile-stat-label { font-size: 0.73rem; color: rgba(255,255,255,0.4); margin-top: 0.2rem; }
-
 /* ── AUTH PAGES ── */
 .auth-card {
     max-width: 440px;
@@ -638,13 +600,12 @@ section[data-testid="stSidebar"] { display: none !important; }
     font-weight: 800;
     text-align: center;
     margin-bottom: 0.5rem;
-    background: linear-gradient(90deg, #c4b5fd, #00e5ff);
+    background: linear-gradient(90deg, #c4b5fd, #6ee7ff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 .auth-sub { text-align: center; font-size: 0.88rem; color: rgba(255,255,255,0.4); margin-bottom: 2rem; }
-
 /* ── HOW IT WORKS ── */
 .how-grid {
     display: grid;
@@ -666,7 +627,6 @@ section[data-testid="stSidebar"] { display: none !important; }
 .how-icon { font-size: 2rem; margin-bottom: 0.75rem; }
 .how-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; color: #c4b5fd; }
 .how-desc { font-size: 0.82rem; color: rgba(255,255,255,0.5); line-height: 1.55; }
-
 /* ── INPUT OVERRIDES ── */
 .stTextArea textarea {
     background: rgba(255,255,255,0.04) !important;
@@ -685,7 +645,7 @@ section[data-testid="stSidebar"] { display: none !important; }
     font-family: 'Sora', sans-serif !important;
 }
 .stButton > button {
-    background: linear-gradient(135deg, #00b4d8, #7c3aed, #ec4899) !important;
+    background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
     color: #fff !important;
     border: none !important;
     border-radius: 14px !important;
@@ -693,12 +653,12 @@ section[data-testid="stSidebar"] { display: none !important; }
     font-size: 1rem !important;
     padding: 0.75rem 2rem !important;
     width: 100%;
-    box-shadow: 0 0 25px rgba(124,58,237,0.4) !important;
+    box-shadow: 0 0 25px rgba(124,58,237,0.3) !important;
     transition: all 0.2s !important;
     font-family: 'Sora', sans-serif !important;
 }
 .stButton > button:hover {
-    box-shadow: 0 0 40px rgba(124,58,237,0.65) !important;
+    box-shadow: 0 0 40px rgba(124,58,237,0.5) !important;
     transform: translateY(-2px) !important;
 }
 .stSelectbox select, [data-baseweb="select"] {
@@ -716,10 +676,8 @@ div[data-testid="stTextArea"] label {
 }
 .stRadio > div { gap: 0.5rem; }
 .stRadio label { color: rgba(255,255,255,0.7) !important; }
-
 /* Plotly charts transparent */
 .js-plotly-plot .plotly, .plotly-graph-div { background: transparent !important; }
-
 /* Section header */
 .section-header {
     font-size: 1.25rem;
@@ -729,12 +687,11 @@ div[data-testid="stTextArea"] label {
     padding: 0 1.5rem;
 }
 .section-header span {
-    background: linear-gradient(90deg, #c4b5fd, #00e5ff);
+    background: linear-gradient(90deg, #c4b5fd, #6ee7ff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
-
 /* Profile dropdown */
 .profile-dropdown {
     background: rgba(15,7,48,0.97);
@@ -754,13 +711,11 @@ div[data-testid="stTextArea"] label {
 }
 .pd-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
 .pd-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 0.4rem 0; }
-
 /* About page */
 .about-section { max-width: 720px; margin: 2rem auto; padding: 0 1.5rem; }
 .about-section h2 { font-size: 1.4rem; font-weight: 700; color: #c4b5fd; margin: 2rem 0 0.75rem; }
 .about-section p { font-size: 0.92rem; color: rgba(255,255,255,0.6); line-height: 1.75; }
 .about-section ul { color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 2; padding-left: 1.2rem; }
-
 /* URL result box */
 .url-meta {
     background: rgba(255,255,255,0.03);
@@ -773,13 +728,10 @@ div[data-testid="stTextArea"] label {
 .url-meta-url { font-size: 0.78rem; color: rgba(110,231,255,0.7); font-family: 'JetBrains Mono', monospace; word-break: break-all; }
 </style>
 """, unsafe_allow_html=True)
-
-
 # ─────────────────────────────────────────────────────────────
 # AUTH HELPERS
 # ─────────────────────────────────────────────────────────────
 def hash_pw(pw): return hashlib.sha256(pw.encode()).hexdigest()
-
 def register_user(username, email, password):
     db = st.session_state.users_db
     if username in db:
@@ -791,7 +743,6 @@ def register_user(username, email, password):
         "history": []
     }
     return True, "ok"
-
 def login_user(username, password):
     db = st.session_state.users_db
     if username not in db:
@@ -799,12 +750,10 @@ def login_user(username, password):
     if db[username]["password"] != hash_pw(password):
         return False, "Incorrect password."
     return True, db[username]
-
 def current_user_data():
     if st.session_state.logged_in:
         return st.session_state.users_db.get(st.session_state.username, {})
     return {}
-
 def save_to_history(entry):
     if st.session_state.logged_in:
         username = st.session_state.username
@@ -812,8 +761,6 @@ def save_to_history(entry):
             st.session_state.users_db[username]["history"].append(entry)
     else:
         st.session_state.history.append(entry)
-
-
 # ─────────────────────────────────────────────────────────────
 # ANALYSIS ENGINE
 # ─────────────────────────────────────────────────────────────
@@ -826,14 +773,12 @@ FAKE_INDICATORS = [
     'mainstream media won\'t tell you', 'they are hiding', 'big pharma',
     'illuminati', 'new world order', 'chemtrails', 'mind control'
 ]
-
 CREDIBILITY_SIGNALS = [
     'according to', 'researchers found', 'study shows', 'officials said',
     'confirmed by', 'data shows', 'statistics', 'peer-reviewed', 'evidence',
     'experts say', 'government announced', 'report states', 'survey',
     'analysis', 'published in', 'journal', 'university', 'institute'
 ]
-
 def clean_text(text):
     import re
     text = str(text).lower()
@@ -841,11 +786,9 @@ def clean_text(text):
     text = re.sub(r'[^a-zA-Z\s]', '', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
-
 def analyze_linguistic_features(text):
     text_lower = text.lower()
     words = text.split()
-
     fake_word_count = sum(1 for w in FAKE_INDICATORS if w in text_lower)
     cred_word_count = sum(1 for w in CREDIBILITY_SIGNALS if w in text_lower)
     caps_ratio = sum(1 for w in words if w.isupper() and len(w) > 2) / max(len(words), 1) * 100
@@ -853,7 +796,6 @@ def analyze_linguistic_features(text):
     question_count = text.count('?')
     sentences = [s.strip() for s in re.split(r'[.!?]', text) if len(s.strip()) > 10]
     avg_sent_len = np.mean([len(s.split()) for s in sentences]) if sentences else 0
-
     # Simple sentiment heuristics (no external lib needed in cloud)
     positive_words = ['good', 'great', 'positive', 'success', 'benefit', 'improve', 'help']
     negative_words = ['bad', 'terrible', 'danger', 'threat', 'crisis', 'disaster', 'kill', 'die', 'warn', 'alarm']
@@ -861,7 +803,6 @@ def analyze_linguistic_features(text):
     neg_count = sum(1 for w in negative_words if w in text_lower)
     total_sentiment = pos_count + neg_count
     sentiment_score = (neg_count - pos_count) / max(total_sentiment, 1)
-
     return {
         "fake_word_count": fake_word_count,
         "cred_word_count": cred_word_count,
@@ -874,13 +815,11 @@ def analyze_linguistic_features(text):
         "pos_sentiment": pos_count,
         "neg_sentiment": neg_count,
     }
-
 @st.cache_resource(show_spinner=False)
 def load_tfidf_model():
     model_dir = download_models()
     with open(f"{model_dir}/tfidf_model.pkl", "rb") as f:
         return pickle.load(f)
-
 @st.cache_resource(show_spinner=False)
 def load_roberta():
     import torch
@@ -893,7 +832,6 @@ def load_roberta():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
     return tokenizer, model, device
-
 def predict_tfidf(text):
     try:
         model = load_tfidf_model()
@@ -902,7 +840,6 @@ def predict_tfidf(text):
         return float(prob[1]), float(prob[0])  # fake, real
     except Exception:
         return 0.5, 0.5
-
 def predict_roberta(text):
     try:
         import torch
@@ -914,7 +851,6 @@ def predict_roberta(text):
         return float(probs[1]), float(probs[0])
     except Exception:
         return None, None
-
 def scrape_article(url):
     result = {"url": url, "title": "", "text": "", "success": False, "error": ""}
     try:
@@ -939,7 +875,6 @@ def scrape_article(url):
         except Exception as e2:
             result["error"] = str(e2)
     return result
-
 def get_verdict_info(fake_prob):
     if fake_prob >= 0.78:
         return "fake", "Likely FAKE News 🚨", "result-fake", "#ef4444"
@@ -949,7 +884,6 @@ def get_verdict_info(fake_prob):
         return "unverified", "Needs Verification 🔍", "result-unverified", "#6366f1"
     else:
         return "real", "Likely REAL News ✅", "result-real", "#10b981"
-
 def generate_reasons(features, fake_prob, verdict_type):
     """
     Returns a list of (reason_text, is_positive) tuples.
@@ -957,7 +891,6 @@ def generate_reasons(features, fake_prob, verdict_type):
     Works for any language input — analyses universal writing patterns.
     """
     reasons = []
-
     # ── Fake signals ──────────────────────────────────────────
     if features["fake_word_count"] > 0:
         reasons.append((
@@ -984,7 +917,6 @@ def generate_reasons(features, fake_prob, verdict_type):
             "Very short, punchy sentences — often used to oversimplify complex issues and create emotional urgency",
             False
         ))
-
     # ── Real signals ──────────────────────────────────────────
     if features["cred_word_count"] > 0:
         reasons.append((
@@ -1006,7 +938,6 @@ def generate_reasons(features, fake_prob, verdict_type):
             "Complex, well-structured sentences typical of professional journalism",
             True
         ))
-
     # ── Model-level reason ────────────────────────────────────
     if fake_prob >= 0.78:
         reasons.append((
@@ -1023,63 +954,50 @@ def generate_reasons(features, fake_prob, verdict_type):
             f"Model confidence of {(1-fake_prob)*100:.1f}% real — writing patterns closely match verified news articles in training data",
             True
         ))
-
     # Ensure we always return at least something
     if not reasons:
         if verdict_type in ("fake", "suspicious"):
             reasons.append(("Writing style statistically resembles known misinformation patterns", False))
         else:
             reasons.append(("No significant red flags detected — language appears factual and neutral", True))
-
     return reasons
-
 def generate_how_explanation(features, tfidf_fake, roberta_fake, final_fake):
     """Explains the methodology in plain English."""
     roberta_str = f"{roberta_fake*100:.1f}%" if roberta_fake is not None else "N/A (GPU unavailable)"
     return f"""
 **Step 1 — Text Preprocessing:** The article was cleaned (URLs removed, normalized to lowercase, 
 stop-words filtered, lemmatized) to extract the core linguistic signal.
-
 **Step 2 — TF-IDF Model (Primary):** A Passive-Aggressive / Logistic Regression classifier trained on 
 45,000+ labeled news articles (from Kaggle's Fake & Real News dataset) returned a **{tfidf_fake*100:.1f}% fake probability**. 
 This model achieves ~99.5% accuracy on the test set and is the primary decision-maker. 
 It works on any language because it learns from *character n-grams and word patterns* — not English-only rules.
-
 **Step 3 — RoBERTa Deep Learning (Secondary):** A fine-tuned `roberta-base` transformer 
 (trained for 3 epochs on 8,000 samples with GPU) returned **{roberta_str}**. 
 RoBERTa understands context and semantics beyond simple word matching. 
 It adds a small ±8% nudge when it strongly agrees with the TF-IDF result.
-
 **Step 4 — Linguistic Feature Analysis:** {features['fake_word_count']} clickbait words, 
 {features['caps_ratio']}% ALL-CAPS ratio, {features['exclamation_count']} exclamation marks, 
 {features['cred_word_count']} credibility signals, and {features['word_count']} total words 
 were used to generate human-readable explanations (not to change the score).
-
 **Final Score:** {final_fake*100:.1f}% fake probability → verdict threshold applied 
 (≥78%: Fake | 58–77%: Suspicious | 38–57%: Unverified | <38%: Real).
-
 **Language Note:** The TF-IDF model was trained primarily on English data, 
 but the character-level patterns it learned (excessive punctuation, ALL-CAPS, 
 emotional amplification) are universal across Telugu, Hindi, Malayalam, Tamil, Kannada, 
 and other scripts. Results may be slightly less precise for non-English text — 
 use the linguistic feature signals as additional context.
 """
-
-
 # ─────────────────────────────────────────────────────────────
 # NAVIGATION RENDERING
 # ─────────────────────────────────────────────────────────────
 def render_navbar():
     lang_options = {code: f"{v['flag']} {v['name']}" for code, v in LANG.items()}
-
     with st.container():
         col_logo, col_nav, col_right = st.columns([2, 4, 3])
-
         with col_logo:
             if st.button("🔍 TruthLens", key="logo_btn", help="Go Home"):
                 st.session_state.page = "home"
                 st.rerun()
-
         with col_nav:
             nav_cols = st.columns(4)
             pages = [
@@ -1095,10 +1013,8 @@ def render_navbar():
                     if st.button(f"{active}{label}", key=f"nav_{pg}"):
                         st.session_state.page = pg
                         st.rerun()
-
         with col_right:
             r1, r2, r3 = st.columns([2, 1, 1])
-
             # Language selector
             with r1:
                 chosen = st.selectbox(
@@ -1110,7 +1026,6 @@ def render_navbar():
                 if chosen != st.session_state.lang:
                     st.session_state.lang = chosen
                     st.rerun()
-
             if st.session_state.logged_in:
                 uname = st.session_state.username
                 with r2:
@@ -1133,8 +1048,6 @@ def render_navbar():
                     if st.button(t("signup"), key="signup_nav"):
                         st.session_state.page = "signup"
                         st.rerun()
-
-
 # ─────────────────────────────────────────────────────────────
 # PAGES
 # ─────────────────────────────────────────────────────────────
@@ -1148,7 +1061,6 @@ def page_home():
         analyzes writing patterns, sentiment, and linguistic signals — in seconds, in any language.</div>
     </div>
     """, unsafe_allow_html=True)
-
     # Guest warning
     if not st.session_state.logged_in:
         remaining = max(0, GUEST_LIMIT - st.session_state.guest_attempts)
@@ -1166,10 +1078,8 @@ def page_home():
             return
         else:
             st.info(f"👤 Guest mode — **{remaining} {t('attempts_left')}**. {t('upgrade_msg')}")
-
     # Input tabs
     tab1, tab2 = st.tabs([f"📝 {t('tab_text')}", f"🌐 {t('tab_url')}"])
-
     with tab1:
         text_input = st.text_area(
             t("paste_text"), height=180,
@@ -1181,7 +1091,6 @@ def page_home():
                 _run_analysis(text_input.strip(), input_type="text")
             else:
                 st.warning("Please paste at least 50 characters of article text.")
-
     with tab2:
         url_input = st.text_input(
             t("enter_url"), key="url_input",
@@ -1199,24 +1108,19 @@ def page_home():
                     st.error(f"Could not extract article text. {scraped.get('error','')}")
             else:
                 st.warning("Please enter a valid URL starting with https://")
-
     # Show last result if available
     if st.session_state.last_result:
         render_result(st.session_state.last_result)
-
     # How It Works mini-section
     st.markdown('<div class="section-header" style="margin-top:3rem;"><span>How It Works</span></div>', unsafe_allow_html=True)
     render_how_grid()
-
 def _run_analysis(text, input_type="text", scraped_meta=None):
     if not st.session_state.logged_in:
         st.session_state.guest_attempts += 1
-
     with st.spinner("🧠 Analyzing…"):
         features = analyze_linguistic_features(text)
         tfidf_fake, tfidf_real = predict_tfidf(text)
         roberta_fake, roberta_real = predict_roberta(text)
-
         # Ensemble: TF-IDF primary, RoBERTa small boost
         boost = 0.0
         if roberta_fake is not None:
@@ -1226,11 +1130,9 @@ def _run_analysis(text, input_type="text", scraped_meta=None):
                 boost = -0.05
         final_fake = float(np.clip(tfidf_fake + boost, 0.0, 1.0))
         final_real = 1.0 - final_fake
-
         verdict_type, verdict_label, card_class, color = get_verdict_info(final_fake)
         reasons = generate_reasons(features, final_fake, verdict_type)
         how_text = generate_how_explanation(features, tfidf_fake, roberta_fake, final_fake)
-
     result = {
         "text_preview": text[:200],
         "input_type": input_type,
@@ -1249,7 +1151,6 @@ def _run_analysis(text, input_type="text", scraped_meta=None):
         "timestamp": datetime.datetime.now().strftime("%d %b %Y, %H:%M"),
     }
     st.session_state.last_result = result
-
     # Save to history
     hist_entry = {
         "text_preview": text[:120],
@@ -1262,18 +1163,14 @@ def _run_analysis(text, input_type="text", scraped_meta=None):
     }
     save_to_history(hist_entry)
     st.rerun()
-
-
 def render_result(r):
     features = r["features"]
     final_fake = r["final_fake"]
     final_real = r["final_real"]
     color = r["color"]
     card_class = r["card_class"]
-
     st.markdown("---")
     st.markdown(f'<div class="section-header"><span>Analysis Result</span></div>', unsafe_allow_html=True)
-
     # URL meta box
     if r["scraped_meta"]:
         meta = r["scraped_meta"]
@@ -1283,7 +1180,6 @@ def render_result(r):
             <div class="url-meta-url">🔗 {meta.get('url','')}</div>
         </div>
         """, unsafe_allow_html=True)
-
     # Verdict
     conf_pct = max(final_fake, final_real) * 100
     bar_color = color
@@ -1296,7 +1192,6 @@ def render_result(r):
         </div>
     </div>
     """, unsafe_allow_html=True)
-
     # Metric chips
     rob_str = f"{r['roberta_fake']*100:.1f}%" if r["roberta_fake"] is not None else "N/A"
     st.markdown(f"""
@@ -1311,7 +1206,6 @@ def render_result(r):
         <div class="metric-chip">🔠 ALL-CAPS ratio: <span>{features['caps_ratio']}%</span></div>
     </div>
     """, unsafe_allow_html=True)
-
     # Plotly gauge + bar charts
     col1, col2 = st.columns(2)
     with col1:
@@ -1339,7 +1233,6 @@ def render_result(r):
             font={"color": "#ccc"}
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
     with col2:
         models = ["TF-IDF", "RoBERTa", "Final"]
         fakes = [r["tfidf_fake"] * 100,
@@ -1363,7 +1256,6 @@ def render_result(r):
             showlegend=False,
         )
         st.plotly_chart(bar_fig, use_container_width=True, config={"displayModeBar": False})
-
     # Reasons
     st.markdown(f'<div style="margin-top:1rem;font-size:0.95rem;font-weight:700;color:rgba(255,255,255,0.8);">🔎 {t("why")}</div>', unsafe_allow_html=True)
     for reason_text, is_positive in r["reasons"]:
@@ -1375,11 +1267,9 @@ def render_result(r):
             {icon} {reason_text}
         </div>
         """, unsafe_allow_html=True)
-
     # How it was analyzed
     with st.expander(f"🔬 {t('how')}"):
         st.markdown(r["how_text"])
-
     # Copy / Share
     result_text = f"""TruthLens Analysis Result
 {'='*40}
@@ -1388,41 +1278,32 @@ Confidence: {conf_pct:.1f}%
 Fake Probability: {final_fake*100:.1f}%
 Real Probability: {final_real*100:.1f}%
 Timestamp: {r['timestamp']}
-
 Why:
 """ + "\n".join([f"{'✅' if pos else '⚠️'} {txt}" for txt, pos in r["reasons"]])
-
     col_c1, col_c2 = st.columns(2)
     with col_c1:
         st.code(f"Fake: {final_fake*100:.1f}% | Real: {final_real*100:.1f}% | {r['verdict_label']}", language=None)
     with col_c2:
         st.text_area("Copy full result:", value=result_text, height=100, key="copy_result_box")
-
-
 def page_history():
     st.markdown(f'<div class="section-header"><span>{t("history")}</span></div>', unsafe_allow_html=True)
-
     if st.session_state.logged_in:
         history = current_user_data().get("history", [])
     else:
         history = st.session_state.history
-
     if not history:
         st.info("No checks yet. Analyze an article to see your history here.")
         return
-
     # Summary stats
     total = len(history)
     fakes = sum(1 for h in history if h["verdict_type"] == "fake")
     reals = sum(1 for h in history if h["verdict_type"] == "real")
     sus = total - fakes - reals
-
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Checked", total)
     c2.metric("🚨 Fake", fakes)
     c3.metric("✅ Real", reals)
     c4.metric("⚠️ Suspicious", sus)
-
     if total > 1:
         # Pie chart
         pie_fig = go.Figure(go.Pie(
@@ -1441,7 +1322,6 @@ def page_history():
             showlegend=True,
         )
         st.plotly_chart(pie_fig, use_container_width=True, config={"displayModeBar": False})
-
     st.markdown("---")
     for h in reversed(history[-30:]):  # show last 30
         vtype = h["verdict_type"]
@@ -1455,15 +1335,12 @@ def page_history():
             <div class="hist-date">{h['timestamp']}</div>
         </div>
         """, unsafe_allow_html=True)
-
-
 def page_profile():
     if not st.session_state.logged_in:
         st.warning("Please log in to view your profile.")
         if st.button("Login"):
             st.session_state.page = "login"; st.rerun()
         return
-
     udata = current_user_data()
     uname = st.session_state.username
     history = udata.get("history", [])
@@ -1471,7 +1348,6 @@ def page_profile():
     fakes = sum(1 for h in history if h["verdict_type"] == "fake")
     reals = sum(1 for h in history if h["verdict_type"] == "real")
     initials = uname[:2].upper()
-
     st.markdown(f"""
     <div class="profile-header">
         <div class="profile-avatar-large">{initials}</div>
@@ -1485,14 +1361,12 @@ def page_profile():
         </div>
     </div>
     """, unsafe_allow_html=True)
-
     st.markdown("### ⚙️ Account Settings")
     col1, col2 = st.columns(2)
     with col1:
         new_display = st.text_input("Display Name", value=uname)
     with col2:
         st.text_input("Email", value=udata.get("email",""), disabled=True)
-
     st.markdown("### 🔒 Change Password")
     with st.form("change_pw"):
         old_pw = st.text_input("Current Password", type="password")
@@ -1508,26 +1382,21 @@ def page_profile():
             else:
                 st.session_state.users_db[uname]["password"] = hash_pw(new_pw)
                 st.success("✅ Password updated!")
-
     st.markdown("---")
     if st.button("🚪 Logout", key="profile_logout"):
         st.session_state.logged_in = False
         st.session_state.username = ""
         st.session_state.page = "home"
         st.rerun()
-
     st.markdown("---")
     with st.expander("⚠️ Danger Zone"):
         if st.button("🗑️ Clear My History", key="clear_hist"):
             st.session_state.users_db[uname]["history"] = []
             st.success("History cleared.")
             st.rerun()
-
-
 def page_login():
     st.markdown('<div class="auth-card" style="max-width:440px;margin:2rem auto;">', unsafe_allow_html=True)
     st.markdown(f'<div class="auth-title">Welcome Back</div><div class="auth-sub">Log in to your TruthLens account</div>', unsafe_allow_html=True)
-
     with st.form("login_form"):
         username = st.text_input("Username", placeholder="your_username")
         password = st.text_input("Password", type="password", placeholder="••••••••")
@@ -1543,7 +1412,6 @@ def page_login():
                 st.rerun()
             else:
                 st.error(result)
-
     cols = st.columns(2)
     with cols[0]:
         if st.button("← Back"):
@@ -1551,14 +1419,10 @@ def page_login():
     with cols[1]:
         if st.button("No account? Sign Up"):
             st.session_state.page = "signup"; st.rerun()
-
     st.markdown('</div>', unsafe_allow_html=True)
-
-
 def page_signup():
     st.markdown('<div class="auth-card" style="max-width:440px;margin:2rem auto;">', unsafe_allow_html=True)
     st.markdown('<div class="auth-title">Create Account</div><div class="auth-sub">Join TruthLens for unlimited fact-checking</div>', unsafe_allow_html=True)
-
     with st.form("signup_form"):
         username = st.text_input("Username", placeholder="choose_username")
         email = st.text_input("Email", placeholder="you@email.com")
@@ -1585,7 +1449,6 @@ def page_signup():
                     st.rerun()
                 else:
                     st.error(msg)
-
     cols = st.columns(2)
     with cols[0]:
         if st.button("← Back"):
@@ -1594,8 +1457,6 @@ def page_signup():
         if st.button("Have account? Login"):
             st.session_state.page = "login"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-
-
 def render_how_grid():
     st.markdown("""
     <div class="how-grid">
@@ -1631,56 +1492,41 @@ def render_how_grid():
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-
 def page_how():
     st.markdown(f'<div class="section-header" style="text-align:center;padding-top:2rem;font-size:1.8rem;"><span>How TruthLens Works</span></div>', unsafe_allow_html=True)
     render_how_grid()
-
     st.markdown('<div class="about-section">', unsafe_allow_html=True)
     st.markdown("""
 ## 🎯 Verdict Thresholds Explained
-
 | Score | Verdict | Meaning |
 |-------|---------|---------|
 | ≥ 78% | 🚨 Likely FAKE | Writing strongly matches misinformation patterns |
 | 58–77% | ⚠️ Suspicious | Concerning signals — verify independently |
 | 38–57% | 🔍 Needs Verification | Uncertain — not enough signal either way |
 | < 38% | ✅ Likely REAL | Matches credible journalism patterns |
-
 ## 🌐 Does It Work for Non-English Languages?
-
 Yes — with caveats. The TF-IDF model was trained on English data, but:
 - **Character n-gram patterns** (ALL-CAPS, excessive punctuation, exclamations) are universal across all scripts
 - **The RoBERTa model** has multilingual pretraining that helps with Hindi, Telugu, etc.
 - **Linguistic features** (clickbait word detection, caps ratio) are language-agnostic
-
 For best results on regional language articles, also check the linguistic feature signals manually.
-
 ## 📊 Model Performance
-
 | Model | Accuracy | Speed |
 |-------|----------|-------|
 | TF-IDF + LR | 99.5% | < 0.1s |
 | RoBERTa | ~93% | 1–3s |
 | Combined | 99.5%+ | 2–4s |
-
 *Tested on held-out 20% of 45,000+ article dataset*
     """)
     st.markdown('</div>', unsafe_allow_html=True)
-
-
 def page_about():
     st.markdown('<div class="about-section">', unsafe_allow_html=True)
     st.markdown(f"""
 ## 🔍 About TruthLens
-
 TruthLens is an AI-powered fake news detection system built as a Software Engineering project.
 It combines two machine learning models with linguistic analysis to assess the credibility
 of any news article — in any language.
-
 ## 🛠️ Tech Stack
-
 - **Frontend:** Streamlit (Python)
 - **ML Models:** scikit-learn TF-IDF + Logistic Regression, HuggingFace RoBERTa
 - **Dataset:** Kaggle Fake & Real News Dataset (45,000+ articles)
@@ -1688,29 +1534,22 @@ of any news article — in any language.
 - **Scraping:** newspaper3k, BeautifulSoup4
 - **Hosting:** Streamlit Cloud (24/7) via GitHub
 - **Model Storage:** HuggingFace Hub (Abhichakra/truthlens-models)
-
 ## 👨‍💻 How to Deploy (24/7 on Streamlit Cloud)
-
 1. Push this `app.py` + `requirements.txt` to GitHub
 2. Go to [share.streamlit.io](https://share.streamlit.io)
 3. Connect your GitHub repo → Deploy
 4. Site runs 24/7 for free — no Colab needed!
-
 ## 🔒 Privacy
-
 - Guest users: checks are session-only (reset when browser closes)
 - Logged-in users: history stored in session memory (not persisted to a database)
 - No article text is sent to external servers
     """)
     st.markdown('</div>', unsafe_allow_html=True)
-
-
 # ─────────────────────────────────────────────────────────────
 # MAIN ROUTER
 # ─────────────────────────────────────────────────────────────
 def main():
     render_navbar()
-
     pg = st.session_state.page
     if pg == "home":
         page_home()
@@ -1728,7 +1567,6 @@ def main():
         page_about()
     else:
         page_home()
-
     # Footer
     st.markdown("""
     <div style="text-align:center;padding:3rem 1rem 2rem;color:rgba(255,255,255,0.2);font-size:0.78rem;">
@@ -1736,6 +1574,5 @@ def main():
         <a href="https://github.com/truthlens-app/truthlens" style="color:rgba(110,231,255,0.4);text-decoration:none;">GitHub</a>
     </div>
     """, unsafe_allow_html=True)
-
 if __name__ == "__main__":
     main()
