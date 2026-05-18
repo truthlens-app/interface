@@ -115,6 +115,8 @@ LANG = {
         "sentiment": "భావోద్వేగం", "subjectivity": "ఆత్మాశ్రయత",
         "word_count": "పదాల సంఖ్య", "clickbait": "క్లిక్‌బెయిట్ పదాలు",
         "about": "గురించి", "how_it_works": "ఇది ఎలా పని చేస్తుంది",
+        "bilingual_header": "తెలుగు + ENGLISH OUTPUT",
+        "bilingual_native_label": "తెలుగు",
     },
     "hi": {
         "flag": "🇮🇳", "name": "हिंदी",
@@ -137,6 +139,8 @@ LANG = {
         "sentiment": "भावना", "subjectivity": "व्यक्तिपरकता",
         "word_count": "शब्द संख्या", "clickbait": "क्लिकबेट शब्द",
         "about": "बारे में", "how_it_works": "यह कैसे काम करता है",
+        "bilingual_header": "हिंदी + ENGLISH OUTPUT",
+        "bilingual_native_label": "हिंदी",
     },
     "ml": {
         "flag": "🇮🇳", "name": "മലയാളം",
@@ -159,6 +163,8 @@ LANG = {
         "sentiment": "വികാരം", "subjectivity": "ആത്മനിഷ്ഠത",
         "word_count": "വാക്കുകളുടെ എണ്ണം", "clickbait": "ക്ലിക്ക്ബെയ്റ്റ് വാക്കുകൾ",
         "about": "കുറിച്ച്", "how_it_works": "ഇത് എങ്ങനെ പ്രവർത്തിക്കുന്നു",
+        "bilingual_header": "മലയാളം + ENGLISH OUTPUT",
+        "bilingual_native_label": "മലയാളം",
     },
     "ta": {
         "flag": "🇮🇳", "name": "தமிழ்",
@@ -181,6 +187,8 @@ LANG = {
         "sentiment": "உணர்வு", "subjectivity": "தனிப்பட்ட கருத்து",
         "word_count": "வார்த்தை எண்ணிக்கை", "clickbait": "கிளிக்பெயிட் வார்த்தைகள்",
         "about": "பற்றி", "how_it_works": "இது எவ்வாறு செயல்படுகிறது",
+        "bilingual_header": "தமிழ் + ENGLISH OUTPUT",
+        "bilingual_native_label": "தமிழ்",
     },
     "kn": {
         "flag": "🇮🇳", "name": "ಕನ್ನಡ",
@@ -226,7 +234,7 @@ section[data-testid="stSidebar"] { display: none !important; }
 .block-container { padding: 0 !important; max-width: 100% !important; }
 
 .stApp {
-    background: radial-gradient(ellipse at 20% 10%, #0f0730 0%, #060612 50%, #020208 100%) !important;
+    background: radial-gradient(ellipse at 20% 10%, #1a0535 0%, #07030f 55%, #030108 100%) !important;
     min-height: 100vh;
     color: #e8e6f0 !important;
 }
@@ -248,7 +256,7 @@ section[data-testid="stSidebar"] { display: none !important; }
 .tl-logo {
     font-size: 1.55rem;
     font-weight: 800;
-    background: linear-gradient(90deg, #6ee7ff, #a78bfa, #f472b6);
+    background: linear-gradient(90deg, #00e5ff, #a855f7, #f472b6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -313,11 +321,11 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 .auth-btn.login:hover { background: rgba(167,139,250,0.1); }
 .auth-btn.signup {
-    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    background: linear-gradient(135deg, #00b4d8, #7c3aed, #ec4899);
     color: #fff;
-    box-shadow: 0 0 20px rgba(124,58,237,0.3);
+    box-shadow: 0 0 20px rgba(124,58,237,0.4);
 }
-.auth-btn.signup:hover { box-shadow: 0 0 30px rgba(124,58,237,0.5); transform: translateY(-1px); }
+.auth-btn.signup:hover { box-shadow: 0 0 30px rgba(124,58,237,0.6); transform: translateY(-1px); }
 
 /* Guest counter badge */
 .guest-badge {
@@ -353,7 +361,7 @@ section[data-testid="stSidebar"] { display: none !important; }
     font-size: clamp(2.5rem, 6vw, 4.5rem);
     font-weight: 800;
     line-height: 1.1;
-    background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 40%, #6ee7ff 80%);
+    background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 40%, #00e5ff 80%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -379,7 +387,7 @@ section[data-testid="stSidebar"] { display: none !important; }
 .stat-num {
     font-size: 1.8rem;
     font-weight: 800;
-    background: linear-gradient(90deg, #6ee7ff, #a78bfa);
+    background: linear-gradient(90deg, #00e5ff, #a855f7);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -630,7 +638,7 @@ section[data-testid="stSidebar"] { display: none !important; }
     font-weight: 800;
     text-align: center;
     margin-bottom: 0.5rem;
-    background: linear-gradient(90deg, #c4b5fd, #6ee7ff);
+    background: linear-gradient(90deg, #c4b5fd, #00e5ff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -677,7 +685,7 @@ section[data-testid="stSidebar"] { display: none !important; }
     font-family: 'Sora', sans-serif !important;
 }
 .stButton > button {
-    background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+    background: linear-gradient(135deg, #00b4d8, #7c3aed, #ec4899) !important;
     color: #fff !important;
     border: none !important;
     border-radius: 14px !important;
@@ -685,12 +693,12 @@ section[data-testid="stSidebar"] { display: none !important; }
     font-size: 1rem !important;
     padding: 0.75rem 2rem !important;
     width: 100%;
-    box-shadow: 0 0 25px rgba(124,58,237,0.3) !important;
+    box-shadow: 0 0 25px rgba(124,58,237,0.4) !important;
     transition: all 0.2s !important;
     font-family: 'Sora', sans-serif !important;
 }
 .stButton > button:hover {
-    box-shadow: 0 0 40px rgba(124,58,237,0.5) !important;
+    box-shadow: 0 0 40px rgba(124,58,237,0.65) !important;
     transform: translateY(-2px) !important;
 }
 .stSelectbox select, [data-baseweb="select"] {
@@ -721,7 +729,7 @@ div[data-testid="stTextArea"] label {
     padding: 0 1.5rem;
 }
 .section-header span {
-    background: linear-gradient(90deg, #c4b5fd, #6ee7ff);
+    background: linear-gradient(90deg, #c4b5fd, #00e5ff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
