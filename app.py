@@ -1172,7 +1172,6 @@ def render_result(r):
             <div class="conf-bar-wrap" style="margin-bottom: 1.75rem;">
                 <div class="conf-bar-fill" style="width: {conf_pct:.1f}%; background: {color}; box-shadow: 0 0 12px {color};"></div>
             </div>
-            
             <!-- Badges Row -->
             <div class="metrics-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;">
                 <div class="metric-chip" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">
@@ -1188,13 +1187,11 @@ def render_result(r):
                     🔥 క్లిక్‌బెయిట్: <span style="font-weight: 700; color: #c4b5fd;">{features['fake_word_count']}</span>
                 </div>
             </div>
-            
             <!-- Side-by-side bilingual details panel -->
             <div style="background: rgba(7,3,15,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1.25rem 1.5rem; margin-top: 1rem;">
                 <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
                     🌐 తెలుగు + ENGLISH OUTPUT
                 </div>
-                
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
                     <!-- Telugu Column -->
                     <div style="border-right: 1px solid rgba(255,255,255,0.05); padding-right: 1rem;">
@@ -1205,7 +1202,6 @@ def render_result(r):
                             నకిలీ స్కోరు: {final_fake*100:.1f}% | నిజ స్కోరు: {final_real*100:.1f}%
                         </div>
                     </div>
-                    
                     <!-- English Column -->
                     <div style="padding-left: 0.5rem;">
                         <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 0.6rem; font-weight: 600;">English</div>
