@@ -1119,28 +1119,28 @@ def render_result(r):
     # Safe validation for when RoBERTa is inactive/None
     rob_val = f"{r['roberta_fake']*100:.1f}%" if r["roberta_fake"] is not None else "N/A"
 
-    # Verdicts mapping for both languages
-    verdicts = {
-        "fake": {
-            "te": "🚨 నకిలీ వార్త అని అనుమానం",
-            "en": "Likely FAKE News",
-        },
-        "real": {
-            "te": "✅ నిజమైన వార్త అని అనుమానం",
-            "en": "Likely REAL News",
-        },
-        "suspicious": {
-            "te": "⚠️ అనుమానాస్పద / నిరూపించబడలేదు",
-            "en": "Suspicious / Unverified",
-        },
-        "unverified": {
-            "te": "🔍 నిరూపణ అవసరం",
-            "en": "Needs Verification",
-        }
-    }
+    current_lang = st.session_state.lang
+    lang_name = LANG.get(current_lang, {}).get("name", "Local Language")
 
-    v_te = verdicts.get(verdict_type, verdicts["fake"])["te"]
-    v_en = verdicts.get(verdict_type, verdicts["fake"])["en"]
+    # Fetch corresponding verdict keys dynamically from global translations
+    v_lang_key = f"result_{verdict_type}"
+    v_selected = LANG.get(current_lang, LANG["en"]).get(v_lang_key, LANG["en"][v_lang_key])
+    v_en = LANG["en"].get(v_lang_key, "Likely Fake")
+
+    # Localized labels for badges and panels
+    lbl_words = LANG.get(current_lang, LANG["en"]).get("word_count", "Word Count")
+    lbl_click = LANG.get(current_lang, LANG["en"]).get("clickbait", "Clickbait Words")
+    lbl_conf_local = LANG.get(current_lang, LANG["en"]).get("confidence", "Confidence")
+    lbl_fake_local = LANG.get(current_lang, LANG["en"]).get("fake_score", "Fake Score")
+    lbl_real_local = LANG.get(current_lang, LANG["en"]).get("real_score", "Real Score")
+
+    # Dynamic panel HTML string formatting (strictly NO empty lines to keep HTML parser alive)
+    if current_lang == "en":
+        header_html = f"""<div style="font-size: 1.9rem; font-weight: 800; color: {color}; margin-bottom: 1.1rem; letter-spacing: -0.01em;">{v_en}</div>"""
+        details_panel_html = f"""<!-- Single English Output Panel --><div style="background: rgba(7,3,15,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1.25rem 1.5rem; margin-top: 1rem;"><div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.5rem;">🌐 ANALYSIS OUTPUT</div><div style="font-size: 1.35rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">{v_en}</div><div style="font-size: 0.88rem; color: rgba(255,255,255,0.85); margin-bottom: 0.3rem; font-weight: 500;">Confidence: {conf_pct:.1f}%</div><div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); font-weight: 400;">Fake Score: {final_fake*100:.1f}% | Real Score: {final_real*100:.1f}%</div></div>"""
+    else:
+        header_html = f"""<div class="te-text" style="font-size: 1.9rem; font-weight: 800; color: {color}; margin-bottom: 0.15rem; letter-spacing: -0.01em;">{v_selected}</div><div style="font-size: 1.15rem; font-weight: 500; color: rgba(255,255,255,0.55); margin-bottom: 1.1rem; font-style: italic;">{v_en}</div>"""
+        details_panel_html = f"""<!-- Side-by-side bilingual details panel --><div style="background: rgba(7,3,15,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1.25rem 1.5rem; margin-top: 1rem;"><div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">🌐 {lang_name.upper()} + ENGLISH OUTPUT</div><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;"><!-- Localized Column --><div style="border-right: 1px solid rgba(255,255,255,0.05); padding-right: 1rem;"><div class="te-text" style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 0.6rem; font-weight: 600;">{lang_name}</div><div class="te-text" style="font-size: 1.35rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">{v_selected}</div><div class="te-text" style="font-size: 0.88rem; color: rgba(255,255,255,0.85); margin-bottom: 0.3rem; font-weight: 500;">{lbl_conf_local}: {conf_pct:.1f}%</div><div class="te-text" style="font-size: 0.82rem; color: rgba(255,255,255,0.45); font-weight: 400;">{lbl_fake_local}: {final_fake*100:.1f}% | {lbl_real_local}: {final_real*100:.1f}%</div></div><!-- English Column --><div style="padding-left: 0.5rem;"><div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 0.6rem; font-weight: 600;">English</div><div style="font-size: 1.35rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">{v_en}</div><div style="font-size: 0.88rem; color: rgba(255,255,255,0.85); margin-bottom: 0.3rem; font-weight: 500;">Confidence: {conf_pct:.1f}%</div><div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); font-weight: 400;">Fake Score: {final_fake*100:.1f}% | Real Score: {final_real*100:.1f}%</div></div></div></div>"""
 
     col_l, col_c, col_r = st.columns([1.2, 7.6, 1.2])
 
@@ -1158,63 +1158,60 @@ def render_result(r):
             """, unsafe_allow_html=True)
 
         # Custom Border Glowing Card
-        st.markdown(f"""
-        <div class="result-card {card_class}">
-            <div class="te-text" style="font-size: 1.9rem; font-weight: 800; color: {color}; margin-bottom: 0.15rem; letter-spacing: -0.01em;">
-                {v_te}
-            </div>
-            <div style="font-size: 1.15rem; font-weight: 500; color: rgba(255,255,255,0.55); margin-bottom: 1.1rem; font-style: italic;">
-                {v_en}
-            </div>
-            <div class="te-text" style="font-size: 0.95rem; color: rgba(255,255,255,0.75); margin-bottom: 0.60rem; font-weight: 600;">
-                విశ్వసనీయత / Confidence: {conf_pct:.1f}%
-            </div>
-            <div class="conf-bar-wrap" style="margin-bottom: 1.75rem;">
-                <div class="conf-bar-fill" style="width: {conf_pct:.1f}%; background: {color}; box-shadow: 0 0 12px {color};"></div>
-            </div>
-            <!-- Badges Row -->
-            <div class="metrics-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;">
-                <div class="metric-chip" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">
-                    🤖 TF-IDF: <span style="font-weight: 700; color: #c4b5fd;">{r['tfidf_fake']*100:.1f}%</span>
-                </div>
-                <div class="metric-chip" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">
-                    🧠 RoBERTa: <span style="font-weight: 700; color: #c4b5fd;">{rob_val}</span>
-                </div>
-                <div class="metric-chip te-text" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">
-                    📝 పదాల సంఖ్య: <span style="font-weight: 700; color: #c4b5fd;">{features['word_count']}</span>
-                </div>
-                <div class="metric-chip te-text" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">
-                    🔥 క్లిక్‌బెయిట్: <span style="font-weight: 700; color: #c4b5fd;">{features['fake_word_count']}</span>
-                </div>
-            </div>
-            <!-- Side-by-side bilingual details panel -->
-            <div style="background: rgba(7,3,15,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1.25rem 1.5rem; margin-top: 1rem;">
-                <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
-                    🌐 తెలుగు + ENGLISH OUTPUT
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-                    <!-- Telugu Column -->
-                    <div style="border-right: 1px solid rgba(255,255,255,0.05); padding-right: 1rem;">
-                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 0.6rem; font-weight: 600;">తెలుగు</div>
-                        <div class="te-text" style="font-size: 1.35rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">{v_te}</div>
-                        <div class="te-text" style="font-size: 0.88rem; color: rgba(255,255,255,0.85); margin-bottom: 0.3rem; font-weight: 500;">విశ్వసనీయత: {conf_pct:.1f}%</div>
-                        <div class="te-text" style="font-size: 0.82rem; color: rgba(255,255,255,0.45); font-weight: 400;">
-                            నకిలీ స్కోరు: {final_fake*100:.1f}% | నిజ స్కోరు: {final_real*100:.1f}%
-                        </div>
-                    </div>
-                    <!-- English Column -->
-                    <div style="padding-left: 0.5rem;">
-                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 0.6rem; font-weight: 600;">English</div>
-                        <div style="font-size: 1.35rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">{v_en}</div>
-                        <div style="font-size: 0.88rem; color: rgba(255,255,255,0.85); margin-bottom: 0.3rem; font-weight: 500;">Confidence: {conf_pct:.1f}%</div>
-                        <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); font-weight: 400;">
-                            Fake Score: {final_fake*100:.1f}% | Real Score: {final_real*100:.1f}%
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="result-card {card_class}">{header_html}<div class="te-text" style="font-size: 0.95rem; color: rgba(255,255,255,0.75); margin-bottom: 0.60rem; font-weight: 600;">{lbl_conf_local} / Confidence: {conf_pct:.1f}%</div><div class="conf-bar-wrap" style="margin-bottom: 1.75rem;"><div class="conf-bar-fill" style="width: {conf_pct:.1f}%; background: {color}; box-shadow: 0 0 12px {color};"></div></div><!-- Badges Row --><div class="metrics-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;"><div class="metric-chip" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">🤖 TF-IDF: <span style="font-weight: 700; color: #c4b5fd;">{r['tfidf_fake']*100:.1f}%</span></div><div class="metric-chip" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">🧠 RoBERTa: <span style="font-weight: 700; color: #c4b5fd;">{rob_val}</span></div><div class="metric-chip te-text" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">📝 {lbl_words}: <span style="font-weight: 700; color: #c4b5fd;">{features['word_count']}</span></div><div class="metric-chip te-text" style="padding: 0.5rem 1rem; background: #1c1538; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; font-size: 0.85rem; color: #fff;">🔥 {lbl_click}: <span style="font-weight: 700; color: #c4b5fd;">{features['fake_word_count']}</span></div></div>{details_panel_html}</div>""", unsafe_allow_html=True)
+
+        # Plotly ensemble probability & metrics graphs
+        st.markdown(f'<div style="margin-top: 2rem; font-size: 0.95rem; font-weight: 700; color: rgba(255,255,255,0.8); margin-bottom: 0.75rem;">📊 Probability & Model Metrics</div>', unsafe_allow_html=True)
+        col_g1, col_g2 = st.columns(2)
+        with col_g1:
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=round(final_fake * 100, 1),
+                title={"text": "Fake Probability %", "font": {"color": "#c4b5fd", "size": 14, "family": "Sora"}},
+                gauge={
+                    "axis": {"range": [0, 100], "tickfont": {"color": "#888"}},
+                    "bar": {"color": color, "thickness": 0.25},
+                    "bgcolor": "rgba(255,255,255,0.05)",
+                    "steps": [
+                        {"range": [0, 38], "color": "rgba(16,185,129,0.12)"},
+                        {"range": [38, 58], "color": "rgba(99,102,241,0.12)"},
+                        {"range": [58, 78], "color": "rgba(245,158,11,0.12)"},
+                        {"range": [78, 100], "color": "rgba(239,68,68,0.12)"},
+                    ],
+                    "threshold": {"line": {"color": color, "width": 3}, "thickness": 0.8, "value": final_fake * 100}
+                },
+                number={"suffix": "%", "font": {"color": color, "size": 28, "family": "Sora"}}
+            ))
+            fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                height=200, margin=dict(t=30, b=10, l=10, r=10),
+                font={"color": "#ccc"}
+            )
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+        with col_g2:
+            models = ["TF-IDF", "RoBERTa", "Final"]
+            fakes = [r["tfidf_fake"] * 100,
+                     r["roberta_fake"] * 100 if r["roberta_fake"] is not None else 0,
+                     final_fake * 100]
+            bar_fig = go.Figure()
+            bar_fig.add_trace(go.Bar(
+                x=models, y=fakes,
+                marker_color=["#06b6d4", "#8b5cf6", color],
+                marker_line_width=0,
+                name="Fake %",
+            ))
+            bar_fig.add_hline(y=78, line_dash="dash", line_color="#ef4444", annotation_text="Fake (78%)", annotation_font_color="#ef4444")
+            bar_fig.add_hline(y=58, line_dash="dot", line_color="#f59e0b", annotation_text="Suspicious (58%)", annotation_font_color="#f59e0b")
+            bar_fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                height=200, margin=dict(t=15, b=10, l=10, r=10),
+                yaxis=dict(range=[0, 105], gridcolor="rgba(255,255,255,0.05)", tickfont={"color": "#888"}),
+                xaxis=dict(tickfont={"color": "#aaa"}),
+                font={"color": "#ccc", "family": "Sora"},
+                showlegend=False,
+            )
+            st.plotly_chart(bar_fig, use_container_width=True, config={"displayModeBar": False})
 
         # Reasons
         st.markdown(f'<div style="margin-top:1.5rem;font-size:0.95rem;font-weight:700;color:rgba(255,255,255,0.8);">🔎 {t("why")}</div>', unsafe_allow_html=True)
