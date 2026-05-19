@@ -1471,6 +1471,16 @@ def render_result(r):
                         </div>
                         """, unsafe_allow_html=True)
             
+            # Reference Sources Scanned Display
+            with st.expander("🛡️ Verification Sources Monitored"):
+                st.markdown('<div style="font-size:0.85rem; font-weight:700; color:rgba(255,255,255,0.7); margin-bottom:0.4rem;">Verified Fact-Checking Registries Monitored:</div>', unsafe_allow_html=True)
+                fc_pills = " ".join([f'<span style="background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3); color: #c4b5fd; padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.72rem; margin: 0.2rem; display: inline-block; font-weight: 500;">{fc}</span>' for fc in FACT_CHECKERS])
+                st.markdown(f'<div style="display: flex; flex-wrap: wrap; margin-bottom: 0.95rem;">{fc_pills}</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div style="font-size:0.85rem; font-weight:700; color:rgba(255,255,255,0.7); margin-bottom:0.4rem;">Reputable Global & Local News Sources Scanned:</div>', unsafe_allow_html=True)
+                ts_pills = " ".join([f'<span style="background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #34d399; padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.72rem; margin: 0.2rem; display: inline-block; font-weight: 500;">{ts}</span>' for ts in TRUSTED_SOURCES])
+                st.markdown(f'<div style="display: flex; flex-wrap: wrap; margin-bottom: 0.4rem;">{ts_pills}</div>', unsafe_allow_html=True)
+
             # Expander containing the web cross-reference list
             with st.expander("🔗 View Web Cross-Reference Matches"):
                 st.caption(f"Search Query Used: *\"{r.get('query_used', '')}\"*")
