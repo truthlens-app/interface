@@ -1114,14 +1114,38 @@ def page_home():
     st.markdown('<div class="section-header" style="margin-top:3rem; text-align:center;"><span>How It Works</span></div>', unsafe_allow_html=True)
     render_how_grid()
 
+def translate_to_english(text):
+    try:
+        import requests
+        url = "https://translate.googleapis.com/translate_a/single"
+        params = {
+            "client": "gtx",
+            "sl": "auto",
+            "tl": "en",
+            "dt": "t",
+            "q": text
+        }
+        resp = requests.get(url, params=params, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            # Combine all translated segments together
+            translated_text = "".join([segment[0] for segment in data[0] if segment[0]])
+            return translated_text
+    except Exception:
+        pass
+    return text
+
 def _run_analysis(text, input_type="text", scraped_meta=None):
     if not st.session_state.logged_in:
         st.session_state.guest_attempts += 1
 
     with st.spinner("🧠 Analyzing…"):
-        features = analyze_linguistic_features(text)
-        tfidf_fake, tfidf_real = predict_tfidf(text)
-        roberta_fake, roberta_real = predict_roberta(text)
+        # Auto-translate regional language text to English for high-accuracy analysis with English-trained models
+        analysis_text = translate_to_english(text)
+        
+        features = analyze_linguistic_features(analysis_text)
+        tfidf_fake, tfidf_real = predict_tfidf(analysis_text)
+        roberta_fake, roberta_real = predict_roberta(analysis_text)
 
         # Ensemble: TF-IDF primary, RoBERTa small boost
         boost = 0.0
