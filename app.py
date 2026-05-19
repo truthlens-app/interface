@@ -632,6 +632,74 @@ def save_to_history(entry):
 # ─────────────────────────────────────────────────────────────
 # ANALYSIS ENGINE
 # ─────────────────────────────────────────────────────────────
+FACT_CHECKERS = [
+    "snopes.com", "politifact.com", "factcheck.org", "altnews.in", 
+    "boomlive.in", "pib.gov.in", "leadstories.com", "hoax-slayer.net", 
+    "fullfact.org", "climatefeedback.org", "factcheckni.org"
+]
+
+TRUSTED_SOURCES = [
+    "reuters.com", "apnews.com", "bbc.com", "nytimes.com", 
+    "thehindu.com", "timesofindia.indiatimes.com", "bloomberg.com", 
+    "wsj.com", "theguardian.com", "npr.org", "aljazeera.com", 
+    "afp.com", "indianexpress.com", "ndtv.com"
+]
+
+def search_duckduckgo(query):
+    results = []
+    try:
+        import urllib.parse
+        from bs4 import BeautifulSoup
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
+        resp = requests.get(url, headers=headers, timeout=8)
+        if resp.status_code == 200:
+            soup = BeautifulSoup(resp.text, "html.parser")
+            result_divs = soup.find_all("div", class_="result")
+            for div in result_divs[:6]:
+                a_title = div.find("a", class_="result__a")
+                if not a_title:
+                    continue
+                title = a_title.text.strip()
+                href = a_title.get("href", "")
+                
+                # Extract redirect URL
+                if "uddg=" in href:
+                    parsed = urllib.parse.urlparse(href)
+                    query_params = urllib.parse.parse_qs(parsed.query)
+                    if "uddg" in query_params:
+                        href = query_params["uddg"][0]
+                        
+                snippet_a = div.find("a", class_="result__snippet")
+                snippet = snippet_a.text.strip() if snippet_a else ""
+                
+                results.append({
+                    "title": title,
+                    "url": href,
+                    "snippet": snippet
+                })
+                
+            # Fallback for generic layout / direct link extraction
+            if not results:
+                links = soup.find_all("a")
+                for link in links:
+                    href = link.get("href", "")
+                    title = link.text.strip()
+                    if href.startswith("http") and not any(x in href for x in ["duckduckgo", "google", "yandex"]):
+                        results.append({
+                            "title": title if title else href,
+                            "url": href,
+                            "snippet": ""
+                        })
+                        if len(results) >= 5:
+                            break
+    except Exception:
+        pass
+    return results
+
 FAKE_INDICATORS = [
     'shocking', 'breaking', 'exposed', 'secret', "you won't believe",
     "they don't want you to know", 'wake up', 'hoax', 'conspiracy',
@@ -1147,14 +1215,75 @@ def _run_analysis(text, input_type="text", scraped_meta=None):
         tfidf_fake, tfidf_real = predict_tfidf(analysis_text)
         roberta_fake, roberta_real = predict_roberta(analysis_text)
 
-        # Ensemble: TF-IDF primary, RoBERTa small boost
+        # ── Real-time Factual Web Verification ──────────────────────
+        query = ""
+        if input_type == "url" and scraped_meta and scraped_meta.get("title"):
+            query = scraped_meta["title"]
+        else:
+            # Get the first sentence or first 120 characters of the text
+            sentences = [s.strip() for s in re.split(r'[.!?]', text) if len(s.strip()) > 10]
+            query = sentences[0] if sentences else text[:120]
+        
+        # Clean query
+        query = re.sub(r'[^\w\s\-\']', '', query).strip()
+        
+        web_results = []
+        fact_check_hits = []
+        trusted_hits = []
+        fact_check_score_adj = 0.0
+        
+        if len(query) > 10:
+            web_results = search_duckduckgo(query)
+            
+            for res in web_results:
+                url_lower = res["url"].lower()
+                title_lower = res["title"].lower()
+                snippet_lower = res["snippet"].lower()
+                
+                is_fact_checker = False
+                for fc in FACT_CHECKERS:
+                    if fc in url_lower:
+                        is_fact_checker = True
+                        fc_name = fc.split('.')[0].capitalize()
+                        verdict = "Unverified"
+                        
+                        if any(x in title_lower or x in snippet_lower for x in ["fake", "false", "debunked", "hoax", "misleading", "incorrect", "mockery"]):
+                            verdict = "Flagged Fake"
+                            fact_check_score_adj += 0.20
+                        elif any(x in title_lower or x in snippet_lower for x in ["true", "correct", "real", "verified"]):
+                            verdict = "Verified True"
+                            fact_check_score_adj -= 0.15
+                        
+                        fact_check_hits.append({
+                            "source": fc_name,
+                            "title": res["title"],
+                            "url": res["url"],
+                            "verdict": verdict,
+                            "snippet": res["snippet"]
+                        })
+                        break
+                
+                if not is_fact_checker:
+                    for ts in TRUSTED_SOURCES:
+                        if ts in url_lower:
+                            trusted_hits.append({
+                                "source": ts.split('.')[0].upper(),
+                                "title": res["title"],
+                                "url": res["url"]
+                            })
+                            fact_check_score_adj -= 0.04
+                            break
+
+        # Ensemble: TF-IDF primary, RoBERTa small boost, Factual Verification adjustments
         boost = 0.0
         if roberta_fake is not None:
             if roberta_fake > 0.90 and tfidf_fake > 0.70:
                 boost = 0.08
             elif roberta_fake < 0.20 and tfidf_fake < 0.30:
                 boost = -0.05
-        final_fake = float(np.clip(tfidf_fake + boost, 0.0, 1.0))
+        
+        # Combine NLP ensemble with factual score adjustments
+        final_fake = float(np.clip(tfidf_fake + boost + fact_check_score_adj, 0.0, 1.0))
         final_real = 1.0 - final_fake
 
         verdict_type, verdict_label, card_class, color = get_verdict_info(final_fake)
@@ -1176,6 +1305,10 @@ def _run_analysis(text, input_type="text", scraped_meta=None):
         "color": color,
         "reasons": reasons,
         "how_text": how_text,
+        "web_results": web_results,
+        "fact_check_hits": fact_check_hits,
+        "trusted_hits": trusted_hits,
+        "query_used": query,
         "timestamp": datetime.datetime.now().strftime("%d %b %Y, %H:%M"),
     }
     st.session_state.last_result = result
@@ -1301,7 +1434,66 @@ def render_result(r):
             )
             st.plotly_chart(bar_fig, use_container_width=True, config={"displayModeBar": False})
 
-        # Reasons
+        # ── Real-time Factual Verification Dashboard ───────────────
+        st.markdown(f'<div style="margin-top: 2.2rem; font-size: 1.05rem; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 0.75rem;">🌐 Real-Time Factual Verification & Web Cross-Reference</div>', unsafe_allow_html=True)
+        
+        web_results = r.get("web_results", [])
+        if web_results:
+            # Metrics Row
+            col_fc1, col_fc2 = st.columns(2)
+            with col_fc1:
+                fc_count = len(r.get("fact_check_hits", []))
+                st.metric("Fact-Check Platform Matches", fc_count, help="Articles found on verified fact-checking platforms (Snopes, PolitiFact, AltNews, BoomLive, etc.)")
+            with col_fc2:
+                trusted_count = len(r.get("trusted_hits", []))
+                st.metric("Trusted News Outlet Matches", trusted_count, help="Coverage found in highly reputable global/local news agencies (Reuters, BBC, AP, The Hindu, etc.)")
+            
+            # Direct warning alert if fact-checkers explicitly flagged it
+            fact_check_hits = r.get("fact_check_hits", [])
+            if fact_check_hits:
+                for fc in fact_check_hits:
+                    if fc["verdict"] == "Flagged Fake":
+                        st.markdown(f"""
+                        <div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; padding: 0.95rem 1.25rem; margin-bottom: 0.75rem; color: #f87171; font-size: 0.9rem;">
+                            🚨 <b>Fact-Checked by {fc['source']}:</b> "{fc['title']}" is flagged as <b>FAKE / MISLEADING</b>.
+                        </div>
+                        """, unsafe_allow_html=True)
+                    elif fc["verdict"] == "Verified True":
+                        st.markdown(f"""
+                        <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 0.95rem 1.25rem; margin-bottom: 0.75rem; color: #34d399; font-size: 0.9rem;">
+                            ✅ <b>Fact-Checked by {fc['source']}:</b> "{fc['title']}" is verified as <b>TRUE / CREDIBLE</b>.
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.3); border-radius: 12px; padding: 0.95rem 1.25rem; margin-bottom: 0.75rem; color: #a5b4fc; font-size: 0.9rem;">
+                            🔍 <b>Fact-Checked by {fc['source']}:</b> Article found checking this claim: "{fc['title']}". Verdict is unverified or mixed.
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            # Expander containing the web cross-reference list
+            with st.expander("🔗 View Web Cross-Reference Matches"):
+                st.caption(f"Search Query Used: *\"{r.get('query_used', '')}\"*")
+                for item in web_results:
+                    badge_html = ""
+                    url_lower = item["url"].lower()
+                    if any(fc in url_lower for fc in FACT_CHECKERS):
+                        badge_html = '<span style="background: rgba(139,92,246,0.18); border: 1px solid rgba(139,92,246,0.4); color: #c4b5fd; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; margin-left: 0.5rem; letter-spacing: 0.05em;">FACT-CHECKER</span>'
+                    elif any(ts in url_lower for ts in TRUSTED_SOURCES):
+                        badge_html = '<span style="background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.4); color: #34d399; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; margin-left: 0.5rem; letter-spacing: 0.05em;">TRUSTED SOURCE</span>'
+                    
+                    st.markdown(f"""
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 0.85rem 1.1rem; margin-bottom: 0.65rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <a href="{item['url']}" target="_blank" style="font-size: 0.9rem; font-weight: 600; color: #06b6d4; text-decoration: none; hover: underline;">{item['title']}</a>
+                            {badge_html}
+                        </div>
+                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.35); font-family: monospace; word-break: break-all; margin-bottom: 0.45rem;">🔗 {item['url']}</div>
+                        <div style="font-size: 0.82rem; color: rgba(255,255,255,0.65); line-height: 1.45;">{item['snippet']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        else:
+            st.warning("⚠️ No real-time web cross-reference matches found. This story or claim does not appear widely covered on news portals or fact-checking databases.")
         st.markdown(f'<div style="margin-top:1.5rem;font-size:0.95rem;font-weight:700;color:rgba(255,255,255,0.8);">🔎 {t("why")}</div>', unsafe_allow_html=True)
         for reason_text, is_positive in r["reasons"]:
             icon = "✅" if is_positive else "⚠️"
